@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI OGP Creator - サムネイル作成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontfaceobserver/2.3.0/fontfaceobserver.standalone.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        #canvas-container {
+            width: 100%;
+            aspect-ratio: 1200 / 630;
+            background-color: #000;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .layout-btn {
+            aspect-ratio: 16/9;
+            background-color: #2d3748;
+            border: 2px solid #4a5568;
+            transition: all 0.2s;
+        }
+
+        .layout-btn:hover {
+            border-color: #e53e3e;
+        }
+
+        .layout-btn.active {
+            border-color: #e53e3e;
+            background-color: #e53e3e;
+            color: white;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            overflow: hidden;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #4a5568;
+        }
+
+        .color-picker-wrapper input {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="w-full max-w-6xl flex justify-between items-center mb-8 mt-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">AI OGP Creator <span class="text-red-500">🎨</span></h1>
+            <p class="text-gray-400 text-sm">テキストと画像を選ぶだけで、オシャレなサムネイル・OGP画像を瞬時に作成</p>
+        </div>
+        <button id="download-btn"
+            class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center gap-2">
+            <span>💾 画像を保存 (1200x630)</span>
+        </button>
+    </header>
+
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Controls -->
+        <div class="lg:col-span-1 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
+
+            <!-- Text Inputs -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow">
+                <h3 class="font-bold text-gray-300 mb-3 text-sm">テキスト設定</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-400">メインタイトル</label>
+                        <textarea id="text-main"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white focus:border-red-500"
+                            rows="2">完全自動化</textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">サブタイトル</label>
+                        <input type="text" id="text-sub"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white focus:border-red-500"
+                            value="AI動画生成の未来">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">アクセント / カテゴリ</label>
+                        <input type="text" id="text-accent"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white focus:border-red-500"
+                            value="NEW ARRIVAL">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow">
+                <h3 class="font-bold text-gray-300 mb-3 text-sm">画像・背景</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">背景画像 (Upload)</label>
+                        <input type="file" id="bg-upload" accept="image/*"
+                            class="text-xs text-gray-500 file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-2 file:py-1">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">アイコン/ロゴ (Upload)</label>
+                        <input type="file" id="icon-upload" accept="image/*"
+                            class="text-xs text-gray-500 file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-2 file:py-1">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-gray-400">背景色</label>
+                        <div class="color-picker-wrapper"><input type="color" id="color-bg" value="#1a202c"></div>
+                        <label class="text-xs text-gray-400 ml-2">文字色</label>
+                        <div class="color-picker-wrapper"><input type="color" id="color-text" value="#ffffff"></div>
+                        <label class="text-xs text-gray-400 ml-2">強調色</label>
+                        <div class="color-picker-wrapper"><input type="color" id="color-accent" value="#e53e3e"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layouts -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow">
+                <h3 class="font-bold text-gray-300 mb-3 text-sm">レイアウト選択 (24種)</h3>
+                <div id="layout-grid" class="grid grid-cols-4 gap-2">
+                    <!-- JS generated -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Preview -->
+        <div class="lg:col-span-2 flex flex-col justify-start">
+            <div class="sticky top-4">
+                <div id="canvas-container" class="rounded-lg overflow-hidden border border-gray-700">
+                    <canvas id="main-canvas" width="1200" height="630"></canvas>
+                </div>
+                <p class="text-right text-xs text-gray-500 mt-2">Preview (Scale handled by CSS)</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        const textMain = document.getElementById('text-main');
+        const textSub = document.getElementById('text-sub');
+        const textAccent = document.getElementById('text-accent');
+        const colorBg = document.getElementById('color-bg');
+        const colorText = document.getElementById('color-text');
+        const colorAccent = document.getElementById('color-accent');
+        const bgUpload = document.getElementById('bg-upload');
+        const iconUpload = document.getElementById('icon-upload');
+        const layoutGrid = document.getElementById('layout-grid');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let state = {
+            layoutId: 0,
+            bgImage: null,
+            iconImage: null,
+            texts: { main: "", sub: "", accent: "" },
+            colors: { bg: "", text: "", accent: "" }
+        };
+
+        // Layout Definitions (24 variations)
+        const layouts = Array.from({ length: 24 }, (_, i) => ({ id: i }));
+
+        function init() {
+            // Generate layout buttons
+            layouts.forEach((l, i) => {
+                const btn = document.createElement('button');
+                btn.className = `layout-btn text-xs text-gray-400 flex items-center justify-center font-bold ${i === 0 ? 'active' : ''}`;
+                btn.textContent = i + 1;
+                btn.onclick = () => selectLayout(i);
+                layoutGrid.appendChild(btn);
+            });
+
+            // Initial Draw
+            updateState();
+
+            // Wait for Fonts
+            const font = new FontFaceObserver('Noto Sans JP');
+            font.load().then(() => render());
+        }
+
+        function selectLayout(id) {
+            state.layoutId = id;
+            document.querySelectorAll('.layout-btn').forEach((b, i) => {
+                if (i === id) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            render();
+        }
+
+        function updateState() {
+            state.texts.main = textMain.value;
+            state.texts.sub = textSub.value;
+            state.texts.accent = textAccent.value;
+            state.colors.bg = colorBg.value;
+            state.colors.text = colorText.value;
+            state.colors.accent = colorAccent.value;
+            render();
+        }
+
+        function handleImageUpload(e, key) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                state[key] = img;
+                render();
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        // --- DRAWING LOGIC ---
+        function render() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const { main, sub, accent } = state.texts;
+            const { bg, text, accent: accColor } = state.colors;
+
+            // Clear
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw Background Image if exists (Apply styles based on layout)
+            if (state.bgImage) {
+                drawBgImage(w, h, state.layoutId);
+            }
+
+            // Draw Base Shapes/Overlay based on Layout
+            drawLayoutBase(w, h, state.layoutId, bg, accColor);
+
+            // Draw Text
+            drawTexts(w, h, state.layoutId, main, sub, accent, text, accColor);
+
+            // Draw Icon
+            if (state.iconImage) {
+                drawIcon(w, h, state.layoutId);
+            }
+        }
+
+        function drawBgImage(w, h, id) {
+            // Default: Cover full
+            let dx = 0, dy = 0, dw = w, dh = h;
+
+            // Layout specific bg behavior
+            if ([2, 6, 10, 14, 18, 22].includes(id)) { // Split Right
+                dw = w / 2;
+            } else if ([3, 7, 11, 15, 19, 23].includes(id)) { // Split Left
+                dx = w / 2; dw = w / 2;
+            }
+
+            // Aspect Ratio Fill
+            const img = state.bgImage;
+            const scale = Math.max(dw / img.width, dh / img.height);
+            const sw = dw / scale;
+            const sh = dh / scale;
+            const sx = (img.width - sw) / 2;
+            const sy = (img.height - sh) / 2;
+
+            ctx.save();
+            if ([2, 6].includes(id)) { ctx.beginPath(); ctx.rect(w / 2, 0, w / 2, h); ctx.clip(); dx = w / 2; } // Right half active
+            if ([3, 7].includes(id)) { ctx.beginPath(); ctx.rect(0, 0, w / 2, h); ctx.clip(); } // Left half active
+
+            ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+
+            // Dark Overlay for some layouts
+            if ([0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21].includes(id) && state.bgImage) {
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fillRect(dx, dy, dw, dh);
+            }
+            ctx.restore();
+        }
+
+        function drawLayoutBase(w, h, id, bgColor, accColor) {
+            ctx.save();
+            // Shapes
+            if (id === 1) { // Border
+                ctx.strokeStyle = accColor;
+                ctx.lineWidth = 20;
+                ctx.strokeRect(40, 40, w - 80, h - 80);
+            }
+            if (id === 4) { // Diagonal Split
+                ctx.fillStyle = accColor;
+                ctx.beginPath();
+                ctx.moveTo(w * 0.6, 0);
+                ctx.lineTo(w, 0);
+                ctx.lineTo(w, h);
+                ctx.lineTo(w * 0.4, h);
+                ctx.fill();
+            }
+            if (id === 5) { // Center Box
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(100, 100, w - 200, h - 200);
+            }
+            if (id === 8) { // Circle Center decoration
+                ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(w / 2, h / 2, 250, 0, Math.PI * 2); ctx.stroke();
+            }
+            if (id === 9) { // Top/Bottom Bar
+                ctx.fillStyle = accColor;
+                ctx.fillRect(0, 0, w, 40);
+                ctx.fillRect(0, h - 40, w, 40);
+            }
+            if (id === 12) { // Left Bar
+                ctx.fillStyle = accColor;
+                ctx.fillRect(0, 0, 40, h);
+            }
+            ctx.restore();
+        }
+
+        function drawTexts(w, h, id, main, sub, accent, color, accColor) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Font Settings
+            const mainFont = "900 80px 'Noto Sans JP'";
+            const subFont = "700 40px 'Noto Sans JP'";
+            const accentFont = "700 30px 'Noto Sans JP'";
+
+            let mx = w / 2, my = h / 2; // Main Position
+            let sx = w / 2, sy = h / 2 + 80; // Sub Position
+            let ax = w / 2, ay = h / 2 - 100; // Accent Position
+
+            // Adjust positions based on layout
+            if ([2, 6, 10, 14, 18, 22].includes(id)) { // Left Text
+                mx = w * 0.25; sx = mx; ax = mx;
+            } else if ([3, 7, 11, 15, 19, 23].includes(id)) { // Right Text
+                mx = w * 0.75; sx = mx; ax = mx;
+            } else if ([12, 13].includes(id)) { // Left Align standard
+                ctx.textAlign = 'left';
+                mx = 100; sx = 100; ax = 100;
+            }
+
+            // Accent
+            ctx.font = accentFont;
+            ctx.fillStyle = accColor;
+            if (id === 20) { ctx.fillStyle = "#fff"; ctx.globalCompositeOperation = 'difference'; }
+            if ([4].includes(id)) ctx.fillStyle = "#fff";
+
+            // Draw Badge for Accent if needed
+            if ([0, 1, 5, 8].includes(id) && accent) {
+                const metric = ctx.measureText(accent);
+                const pad = 20;
+                ctx.fillStyle = accColor;
+                ctx.fillRect(ax - metric.width / 2 - pad, ay - 20, metric.width + pad * 2, 40);
+                ctx.fillStyle = "#fff";
+            }
+            ctx.fillText(accent, ax, ay);
+
+            // Main
+            ctx.font = mainFont;
+            ctx.fillStyle = color;
+            if ([16].includes(id)) { // Shadow style
+                ctx.shadowColor = "rgba(0,0,0,1)";
+                ctx.shadowBlur = 0; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+            }
+            wrapText(ctx, main, mx, my, w * ([2, 3, 6, 7].includes(id) ? 0.4 : 0.8), 100);
+            ctx.shadowColor = "transparent";
+
+            // Sub
+            ctx.font = subFont;
+            ctx.fillStyle = "#ccc";
+            if ([4, 9].includes(id)) ctx.fillStyle = "#fff";
+            ctx.fillText(sub, sx, my + 100);
+
+            ctx.restore();
+        }
+
+        function drawIcon(w, h, id) {
+            const img = state.iconImage;
+            const size = 150;
+            let x = w - size - 50, y = 50; // Top Right default
+
+            if ([2, 6].includes(id)) { x = 50; y = 50; } // Top Left
+            if ([5].includes(id)) { x = w / 2 - size / 2; y = h - size - 50; } // Bottom Center
+
+            ctx.save();
+            // Circle Clip
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(img, x, y, size, size);
+            ctx.restore();
+        }
+
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const lines = text.split('\n');
+            let finalLines = [];
+
+            // Simple wrap
+            for (let line of lines) {
+                let words = line.split(''); // Japanese char split
+                let currentLine = '';
+                for (let n = 0; n < words.length; n++) {
+                    let testLine = currentLine + words[n];
+                    let metrics = ctx.measureText(testLine);
+                    let testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        finalLines.push(currentLine);
+                        currentLine = words[n];
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                finalLines.push(currentLine);
+            }
+
+            // Draw
+            const totalHeight = finalLines.length * lineHeight;
+            let startY = y - (totalHeight / 2) + (lineHeight / 2);
+
+            for (let i = 0; i < finalLines.length; i++) {
+                ctx.fillText(finalLines[i], x, startY + (i * lineHeight));
+            }
+        }
+
+        // --- EVENTS ---
+        textMain.addEventListener('input', updateState);
+        textSub.addEventListener('input', updateState);
+        textAccent.addEventListener('input', updateState);
+        colorBg.addEventListener('input', updateState);
+        colorText.addEventListener('input', updateState);
+        colorAccent.addEventListener('input', updateState);
+        bgUpload.addEventListener('change', (e) => handleImageUpload(e, 'bgImage'));
+        iconUpload.addEventListener('change', (e) => handleImageUpload(e, 'iconImage'));
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `ogp_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
