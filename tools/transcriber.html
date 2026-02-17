@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Audio Transcriber - 文字起こし</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-8 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="text-center mb-10 mt-8">
+        <h1 class="text-3xl font-bold text-white mb-2">AI Audio Transcriber <span class="text-blue-500">🎙️</span></h1>
+        <p class="text-gray-400 text-sm">音声ファイルをアップロードして自動文字起こし（タイムコード付き）。ブラウザ上で動作します。</p>
+        <p class="text-yellow-500 text-xs mt-2">※初回実行時はモデルのダウンロード(約100MB〜)が発生します。</p>
+    </header>
+
+    <main class="w-full max-w-4xl space-y-6">
+
+        <!-- Upload -->
+        <div class="bg-gray-800 p-8 rounded-2xl border-2 border-dashed border-gray-600 hover:border-blue-500 transition text-center cursor-pointer"
+            id="drop-zone">
+            <input type="file" id="audio-input" accept="audio/*,video/*" class="hidden">
+            <div class="text-5xl mb-4">📂</div>
+            <p class="text-lg font-bold text-gray-200">音声・動画ファイルをここにドロップ</p>
+            <p class="text-sm text-gray-500">またはクリックして選択</p>
+        </div>
+
+        <!-- Status -->
+        <div id="status-area"
+            class="hidden bg-gray-800 p-4 rounded-xl border border-gray-700 flex items-center justify-between">
+            <span id="status-text" class="text-blue-400 font-mono text-sm">モデルを準備中...</span>
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Result -->
+        <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">書き起こし結果</h2>
+                <button id="copy-btn" disabled
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    コピーする
+                </button>
+            </div>
+            <textarea id="result-area"
+                class="w-full h-96 bg-gray-900 border border-gray-700 rounded-xl p-4 text-gray-300 font-mono text-sm leading-relaxed focus:border-blue-500 focus:outline-none"
+                readonly placeholder="ここに結果が表示されます..."></textarea>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
+
+        // Skip local model check since we use CDN
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('audio-input');
+        const statusArea = document.getElementById('status-area');
+        const statusText = document.getElementById('status-text');
+        const resultArea = document.getElementById('result-area');
+        const copyBtn = document.getElementById('copy-btn');
+        const spinner = document.querySelector('.loading-spinner');
+
+        let transcriber = null;
+
+        // Models:
+        // 'Xenova/whisper-tiny' (Fastest, ~40MB)
+        // 'Xenova/whisper-base' (Balanced, ~70MB)
+        const MODEL_NAME = 'Xenova/whisper-tiny';
+
+        async function initTranscriber() {
+            try {
+                updateStatus("モデルをロード中... (初回は時間がかかります)", true);
+                transcriber = await pipeline('automatic-speech-recognition', MODEL_NAME);
+                updateStatus("準備完了。ファイルをアップロードしてください。", false);
+            } catch (e) {
+                updateStatus("エラー: モデルのロードに失敗しました。" + e.message, false);
+                console.error(e);
+            }
+        }
+
+        function updateStatus(msg, isLoading) {
+            statusArea.classList.remove('hidden');
+            statusText.textContent = msg;
+            spinner.style.display = isLoading ? 'block' : 'none';
+        }
+
+        async function processAudio(file) {
+            if (!transcriber) await initTranscriber();
+
+            updateStatus("音声を解析中... (変換処理)", true);
+            resultArea.value = "";
+            copyBtn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const audioData = e.target.result; // ArrayBuffer needed? transformers.js handles urls better usually.
+                // Creating a blob URL is safer for transformers.js in browser
+                const blob = new Blob([new Uint8Array(audioData)], { type: file.type });
+                const url = URL.createObjectURL(blob);
+
+                try {
+                    // Run transcription
+                    // return_timestamps: true gives chunks with timestamp
+                    const output = await transcriber(url, {
+                        chunk_length_s: 30,
+                        stride_length_s: 5,
+                        language: 'japanese',
+                        task: 'transcribe',
+                        return_timestamps: true
+                    });
+
+                    // Format output
+                    let formattedText = "";
+                    if (output.chunks) {
+                        output.chunks.forEach(chunk => {
+                            const start = formatTime(chunk.timestamp[0]);
+                            const end = formatTime(chunk.timestamp[1]);
+                            formattedText += `[${start} - ${end}] ${chunk.text}\n`;
+                        });
+                    } else {
+                        formattedText = output.text;
+                    }
+
+                    resultArea.value = formattedText;
+                    copyBtn.disabled = false;
+                    updateStatus("完了しました！", false);
+
+                } catch (err) {
+                    updateStatus("エラー: 書き起こしに失敗しました。" + err.message, false);
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function formatTime(seconds) {
+            if (seconds === null || seconds === undefined) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Event Listeners
+        dropZone.onclick = () => fileInput.click();
+
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('border-blue-500');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            if (e.dataTransfer.files.length) processAudio(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = (e) => {
+            if (e.target.files.length) processAudio(e.target.files[0]);
+        };
+
+        copyBtn.onclick = () => {
+            resultArea.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'コピーしました！';
+            setTimeout(() => copyBtn.textContent = 'コピーする', 2000);
+        };
+
+        // Preload on load
+        window.addEventListener('DOMContentLoaded', initTranscriber);
+
+    </script>
+</body>
+
+</html>

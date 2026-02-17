@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Guides - ガイド集</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .guide-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            transition: all 0.2s;
+        }
+
+        .guide-card:hover {
+            transform: translateY(-2px);
+            border-color: #64748b;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <a href="../index.html" class="text-blue-400 hover:text-blue-300 text-sm mb-2 inline-block">&larr;
+                    ツール集に戻る</a>
+                <h1 class="text-3xl font-bold text-white">AI Video Guides</h1>
+                <p class="text-gray-400 mt-2">動画生成AIの技術検証とワークフローに関するナレッジベース</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Guide 1 -->
+            <a href="video-workflow.html" class="guide-card p-6 rounded-xl block no-underline group">
+                <div class="text-xs font-bold text-blue-400 mb-2 uppercase tracking-wide">Workflow</div>
+                <h2 class="text-xl font-bold text-white mb-3 group-hover:text-blue-300 transition">動画生成AIワークフロー完全ガイド
+                </h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Kling AI, Vidu, Midjourney, ElevenLabsを組み合わせた、高品質なAI動画コンテンツの制作フローを解説。
+                </p>
+            </a>
+
+            <!-- Guide 2 -->
+            <a href="ltx2-setup.html" class="guide-card p-6 rounded-xl block no-underline group">
+                <div class="text-xs font-bold text-green-400 mb-2 uppercase tracking-wide">New Tech</div>
+                <h2 class="text-xl font-bold text-white mb-3 group-hover:text-green-300 transition">LTX-2 導入・セットアップガイド
+                </h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    最新モデルLTX-2の環境構築から基本的な使い方までを日本語で詳細に解説。
+                </p>
+            </a>
+
+            <!-- Guide 3 -->
+            <a href="video-comparison.html" class="guide-card p-6 rounded-xl block no-underline group">
+                <div class="text-xs font-bold text-purple-400 mb-2 uppercase tracking-wide">Comparison</div>
+                <h2 class="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition">最新動画生成AI 特徴比較まとめ
+                </h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Kling, Vidu, Runway, Sora... 各モデルの強み・弱みと選び方を徹底比較。
+                </p>
+            </a>
+
+            <!-- Guide 4 -->
+            <a href="fal-ai.html" class="guide-card p-6 rounded-xl block no-underline group">
+                <div class="text-xs font-bold text-orange-400 mb-2 uppercase tracking-wide">Tool</div>
+                <h2 class="text-xl font-bold text-white mb-3 group-hover:text-orange-300 transition">Fal.ai 使い方ガイド</h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    高速生成プラットフォームFal.aiの基本操作と活用方法。
+                </p>
+            </a>
+
+            <!-- Guide 5 -->
+            <a href="elevenlabs.html" class="guide-card p-6 rounded-xl block no-underline group">
+                <div class="text-xs font-bold text-pink-400 mb-2 uppercase tracking-wide">Audio</div>
+                <h2 class="text-xl font-bold text-white mb-3 group-hover:text-pink-300 transition">ElevenLabs 検証チェックリスト
+                </h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    技術検証用。まず何を試すべきか、機能確認のためのステップバイステップガイド。
+                </p>
+            </a>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

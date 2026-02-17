@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最新動画生成AI 特徴比較</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+
+        th,
+        td {
+            border: 1px solid #334155;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: #94a3b8;
+        }
+
+        tr:nth-child(even) {
+            background-color: #1e293b;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-6xl mx-auto">
+    <a href="index.html" class="text-purple-400 hover:underline mb-8 block">&larr; ガイド一覧に戻る</a>
+
+    <h1 class="text-4xl font-bold text-white mb-8">最新動画生成AI 特徴比較まとめ</h1>
+    <p class="text-gray-400 mb-8">現在利用可能な主要な動画生成AIモデルの強みと弱みをまとめました。</p>
+
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr>
+                    <th class="w-1/6">モデル名</th>
+                    <th class="w-1/6">得意分野</th>
+                    <th class="w-1/6">動きの質</th>
+                    <th class="w-1/4">特徴・メリット</th>
+                    <th class="w-1/4">弱点・注意点</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="font-bold text-purple-300">Kling AI</td>
+                    <td>実写、リアルな物理挙動</td>
+                    <td>非常に滑らか (5秒/10秒)</td>
+                    <td>中国発のSora対抗馬。人物の動きや物理演算的な挙動が非常に自然。現在はWeb版で誰でも試せる。</td>
+                    <td>サーバーが混雑しがち。プロンプトの検閲が少し厳しめ。</td>
+                </tr>
+                <tr>
+                    <td class="font-bold text-blue-300">Vidu</td>
+                    <td>アニメーション、高速生成</td>
+                    <td>ダイナミック</td>
+                    <td>生成スピードが爆速（数秒）。アニメ調やイラスト調の動きに強く、キャラ崩壊もしにくい。</td>
+                    <td>実写のフォトリアリズムではKlingに一歩譲る場合がある。4秒生成が基本。</td>
+                </tr>
+                <tr>
+                    <td class="font-bold text-pink-300">Runway Gen-3 Alpha</td>
+                    <td>シネマティック、制御</td>
+                    <td>高精細</td>
+                    <td>圧倒的な画質とコントロール性。Motion Brushなどの編集機能が充実しており、プロのワークフローに組み込みやすい。</td>
+                    <td>実写系は得意だが、アニメ系はLoRAなどがないと画風が安定しにくい。</td>
+                </tr>
+                <tr>
+                    <td class="font-bold text-green-300">Luma Dream Machine</td>
+                    <td>汎用、3D整合性</td>
+                    <td>自然</td>
+                    <td>開始フレームと終了フレームを指定できる機能が強力。動画の「間」を埋めるのに最適。</td>
+                    <td>たまにモーフィングのような不自然な変形が起きることがある。</td>
+                </tr>
+                <tr>
+                    <td class="font-bold text-yellow-300">Haiper</td>
+                    <td>短尺、質感</td>
+                    <td>硬めだが綺麗</td>
+                    <td>テクスチャの質感が非常に高い。2秒/4秒モデルがあり、素材生成に向いている。</td>
+                    <td>動きの大きさは控えめ。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="text-2xl font-bold mt-12 mb-4 text-white">選び方のヒント</h2>
+    <ul class="list-disc pl-6 space-y-2 text-gray-300">
+        <li><strong>実写映画を作りたいなら:</strong> Kling AI または Runway Gen-3</li>
+        <li><strong>アニメーションMVを作りたいなら:</strong> Vidu または Kling AI</li>
+        <li><strong>特定の始点・終点を繋ぎたいなら:</strong> Luma Dream Machine</li>
+    </ul>
+
+</body>
+
+</html>

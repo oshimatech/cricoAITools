@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTX-2 導入・使い方ガイド</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+
+        .prose h2 {
+            color: #4ade80;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .code-block {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            overflow-x: auto;
+            color: #cbd5e1;
+            margin: 1rem 0;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-4xl mx-auto">
+    <a href="index.html" class="text-green-400 hover:underline mb-8 block">&larr; ガイド一覧に戻る</a>
+
+    <h1 class="text-4xl font-bold text-white mb-8">LTX-2 導入・セットアップガイド</h1>
+    <p class="text-gray-400 mb-8">Lightricksが公開したオープンな動画生成モデル「LTX Video (LTX-2)」の導入手順です。ローカル環境またはクラウドGPUでの実行を想定しています。
+    </p>
+
+    <h2 class="text-2xl font-bold mb-4">前提条件</h2>
+    <ul class="list-disc pl-6 mb-8 space-y-2">
+        <li>Python 3.10以上</li>
+        <li>GPU VRAM: 最低16GB (推奨 24GB以上) - RTX 3090/4090等</li>
+        <li>CUDA Toolkit 12.1</li>
+    </ul>
+
+    <h2 class="text-2xl font-bold mb-4">1. 環境セットアップ</h2>
+    <p class="mb-4">リポジトリをクローンし、依存関係をインストールします。</p>
+    <div class="code-block">
+        git clone https://github.com/Lightricks/LTX-Video.git
+        cd LTX-Video
+        python -m venv venv
+        # Windows: venv\Scripts\activate
+        # Mac/Linux: source venv/bin/activate
+        pip install -r requirements.txt
+    </div>
+
+    <h2 class="text-2xl font-bold mb-4">2. モデルのダウンロード</h2>
+    <p class="mb-4">Hugging Faceからモデルの重みをダウンロードします。</p>
+    <div class="code-block">
+        pip install huggingface_hub
+        huggingface-cli download Lightricks/LTX-Video --local-dir checkpoints/
+    </div>
+
+    <h2 class="text-2xl font-bold mb-4">3. 推論の実行 (Inference)</h2>
+    <p class="mb-4">基本的な生成コマンドの例です。</p>
+    <div class="code-block">
+        python inference.py \
+        --prompt "A cinematic drone shot of a futuristic city at sunset, neon lights, 4k" \
+        --height 480 --width 848 --num_frames 121 \
+        --checkpoint_path checkpoints/ltx-video-2b-v0.9.safetensors
+    </div>
+
+    <h2 class="text-2xl font-bold mb-4">Tips</h2>
+    <ul class="list-disc pl-6 space-y-2">
+        <li><strong>VRAM不足の場合:</strong> 解像度を下げるか、量子化版のモデルを探して利用することを検討してください。</li>
+        <li><strong>ComfyUI:</strong> ComfyUI用のカスタムノードもコミュニティによって開発されています。GUIで操作したい場合はそちらの利用を推奨します。</li>
+    </ul>
+
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElevenLabs 検証チェックリスト</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+
+        .prose h2 {
+            color: #f472b6;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #f472b6;
+            transform: scale(1.2);
+            margin-right: 0.5rem;
+        }
+
+        label {
+            cursor: pointer;
+        }
+
+        .check-item {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-4xl mx-auto">
+    <a href="index.html" class="text-pink-400 hover:underline mb-8 block">&larr; ガイド一覧に戻る</a>
+
+    <h1 class="text-4xl font-bold text-white mb-8">ElevenLabs 技術検証チェックリスト</h1>
+    <p class="text-gray-400 mb-8">これからElevenLabsを導入・検証する際に確認すべき項目をリスト化しました。上から順に試していくことで、機能の全体像が把握できます。</p>
+
+    <div class="bg-gray-800 p-8 rounded-xl border border-gray-700">
+
+        <h2 class="text-2xl font-bold mb-6 text-white">1. Text to Speech (基本機能)</h2>
+        <div class="check-item">
+            <input type="checkbox" id="c1">
+            <label for="c1" class="text-gray-200"><strong>日本語モデル (Multilingual v2) の品質確認:</strong>
+                自然な日本語イントネーションで喋るか確認しましたか？</label>
+        </div>
+        <div class="check-item">
+            <input type="checkbox" id="c2">
+            <label for="c2" class="text-gray-200"><strong>Voice Settings (Stability / Similarity):</strong>
+                Stabilityを下げると感情が乗り、上げると安定的になる挙動を確認しましたか？</label>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-6 text-white">2. Voice Design & Cloning</h2>
+        <div class="check-item">
+            <input type="checkbox" id="c3">
+            <label for="c3" class="text-gray-200"><strong>Voice Design (生成):</strong>
+                性別、年齢、アクセントを指定して、オリジナルの声を生成してみましたか？</label>
+        </div>
+        <div class="check-item">
+            <input type="checkbox" id="c4">
+            <label for="c4" class="text-gray-200"><strong>Instant Voice Cloning:</strong>
+                1分程度の自分の声をアップロードして、クローン精度の高さ（驚くほど似ます）を確認しましたか？</label>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-6 text-white">3. Speech to Speech (演技指導)</h2>
+        <div class="check-item">
+            <input type="checkbox" id="c5">
+            <label for="c5" class="text-gray-200"><strong>演技の転送:</strong>
+                自分で感情を込めて喋った音声をアップロードし、AIの声でその演技（抑揚・間）が再現されるか確認しましたか？</label>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-6 text-white">4. Sound Effects (効果音)</h2>
+        <div class="check-item">
+            <input type="checkbox" id="c6">
+            <label for="c6" class="text-gray-200"><strong>SE生成:</strong> "Footsteps on gravel", "Cyberpunk city
+                ambience" などのプロンプトで効果音を生成しましたか？</label>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

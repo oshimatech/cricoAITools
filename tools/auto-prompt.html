@@ -42,6 +42,7 @@
                     <option value="claude">Claude 3.5 Sonnet</option>
                     <option value="gemini">Gemini Pro</option>
                     <option value="midjourney">Midjourney Helper</option>
+                    <option value="nano_banana">Nano Banana Pro Expert</option>
                 </select>
             </div>
             <div class="flex flex-col gap-1 flex-1">
@@ -51,6 +52,7 @@
                     <option value="realism_video">実写動画生成用のプロンプトを作成させる</option>
                     <option value="split_image">9分割画像生成用のプロンプトを作成させる</option>
                     <option value="general_image">一般的な画像生成プロンプトを作成させる</option>
+                    <option value="nano_feature">Nano Banana Proの機能をフル活用する</option>
                 </select>
             </div>
             <button id="generate-btn"
@@ -126,17 +128,47 @@
 出力は英語で行ってください。`
         };
 
+        const nanoBananaPrompt = `あなたはGoogle Geminiの最新画像生成モデル「Nano Banana Pro」の専門家です。
+ユーザーの要望に応じて、Nano Banana Proの以下の特徴を最大限に活かすプロンプトを作成してください。
+
+# Nano Banana Proの強み
+1. **驚異の文字描写力 (SoTA Text Rendering)**: 看板、メニュー、吹き出し、バナーなどの文字を正確に描写可能。
+2. **図解・フローチャート**: 手順や概念をわかりやすく図式化できる。
+3. **写真合成**: リアルな空間にキャラクターを違和感なく合成できる。
+4. **部分修正**: 「曇り空を青空に」といった具体的な修正指示に強い。
+
+ユーザーから「作りたい画像」や「シチュエーション」が入力されたら、
+上記の特徴を踏まえ、Gemini (Nano Banana Pro) に入力するための最適なプロンプト（日本語可）を出力してください。
+
+例:
+ユーザー: 「カフェのメニューを描いて」
+あなた: 「おしゃれな黒板スタイルのカフェメニュー。チョークアート風。メニュー項目には『Coffee $5』『Latte $6』と明記して。」
+
+ユーザー入力待ちです...`;
+
         function generate() {
             const goal = goalSelect.value;
             const target = targetAiSelect.value;
 
-            let text = prompts[goal] || "Prompt definition not found.";
+            let text = "";
 
-            // ターゲットAIによる微調整（簡易的）
+            if (target === 'nano_banana' || goal === 'nano_feature') {
+                text = nanoBananaPrompt;
+                // 強制的にNano Bananaモードっぽくする
+                if (goal !== 'nano_feature' && target !== 'nano_banana') {
+                    // If user selected normal goal but nano banana ai, or vice versa
+                }
+            } else {
+                text = prompts[goal] || "Prompt definition not found.";
+            }
+
+            // ターゲットAIによる微調整
             if (target === 'claud') {
                 text = "あなたはClaudeです。\n" + text;
-            } else if (target === 'midjourney') {
+            } else if (target === 'midjourney' && target !== 'nano_banana') {
                 text += "\n\n(Note: Midjourney向けのパラメータ --v 6.0 なども考慮してください)";
+            } else if (target === 'gemini') {
+                text = "あなたはGeminiです。創造的な回答を心がけてください。\n" + text;
             }
 
             outputArea.value = text;

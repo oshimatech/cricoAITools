@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fal.ai 使い方ガイド</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+
+        .prose h2 {
+            color: #fb923c;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-4xl mx-auto">
+    <a href="index.html" class="text-orange-400 hover:underline mb-8 block">&larr; ガイド一覧に戻る</a>
+
+    <h1 class="text-4xl font-bold text-white mb-8">Fal.ai 使い方ガイド</h1>
+    <p class="text-gray-400 mb-8">Fal.aiは、最新のAIモデル（Flux.1, LTX Videoなど）を爆速でAPI経由またはWeb UIで利用できるプラットフォームです。</p>
+
+    <div class="space-y-8">
+        <section>
+            <h2 class="text-2xl font-bold mb-4">1. アカウント作成とAPIキー</h2>
+            <p>GitHubアカウントでログインするとスムーズです。API利用の場合は「Key」を発行し、環境変数に設定します。</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold mb-4">2. Web UIでの利用（ComfyUI不要）</h2>
+            <p>Fal.aiのサイト上にある「Playground」を使えば、環境構築なしで最新モデルを試せます。</p>
+            <ul class="list-disc pl-6 mt-4 space-y-2">
+                <li><strong>Flux.1 [Realism]:</strong> 高速かつ高品質な画像生成。Midjourneyレベルの画像が数秒で出ます。</li>
+                <li><strong>Kling:</strong> Fal経由でも利用可能な場合があります（要確認）。</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold mb-4">3. 料金体系</h2>
+            <p>基本は従量課金（Pay-as-you-go）です。推論時間（秒数）に応じて課金されます。</p>
+            <p class="mt-2 text-sm text-gray-400">※プライベートAPIキーは絶対に流出させないように注意してください。</p>
+        </section>
+    </div>
+
+</body>
+
+</html>

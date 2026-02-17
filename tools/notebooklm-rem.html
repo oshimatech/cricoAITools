@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotebookLM Cleaner - PDF透かし消し</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-8 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="text-center mb-10 mt-8">
+        <h1 class="text-3xl font-bold text-white mb-2">NotebookLM Cleaner <span class="text-green-500">📝</span></h1>
+        <p class="text-gray-400 text-sm">NotebookLMで出力したPDFの右上/ページ下部にあるロゴを白いボックスで隠します。</p>
+    </header>
+
+    <main class="w-full max-w-2xl bg-gray-800 p-8 rounded-2xl border border-gray-700 text-center">
+
+        <div id="drop-zone"
+            class="border-2 border-dashed border-gray-600 rounded-xl p-10 cursor-pointer hover:border-green-500 transition mb-6">
+            <div class="text-5xl mb-4">📄</div>
+            <p class="text-xl font-bold text-white">PDFファイルをドロップ</p>
+            <p class="text-sm text-gray-500 mt-2">NotebookLMからエクスポートされたPDFを選択してください</p>
+            <input type="file" id="file-input" accept="application/pdf" class="hidden">
+        </div>
+
+        <div id="status" class="hidden text-blue-400 mb-4 font-mono">処理中...</div>
+
+        <button id="process-btn" disabled
+            class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+            ロゴを除去してダウンロード
+        </button>
+
+    </main>
+
+    <script>
+        const { PDFDocument, rgb } = PDFLib;
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const processBtn = document.getElementById('process-btn');
+        const status = document.getElementById('status');
+
+        let currentFile = null;
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-green-500'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('border-green-500');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-green-500');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        };
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                alert('PDFファイルを選択してください');
+                return;
+            }
+            currentFile = file;
+            processBtn.disabled = false;
+            processBtn.textContent = `ダウンロード (${file.name})`;
+        }
+
+        processBtn.onclick = async () => {
+            if (!currentFile) return;
+            status.textContent = "PDFを処理中...";
+            status.classList.remove('hidden');
+
+            try {
+                const arrayBuffer = await currentFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const pages = pdfDoc.getPages();
+
+                // Assumed Watermark Location for NotebookLM Slides
+                // Usually Top Right or Bottom Right.
+                // We will attempt to cover likely spots.
+                // NOTE: This is heuristic. Real removal requires editing streams which is hard in browser JS efficiently without garbling fonts.
+                // Covering with white rect is safest.
+
+                pages.forEach(page => {
+                    const { width, height } = page.getSize();
+
+                    // Cover Top Right (Logo often here)
+                    // Size approx 150x50 ?
+                    /*
+                    page.drawRectangle({
+                        x: width - 150,
+                        y: height - 50,
+                        width: 150,
+                        height: 50,
+                        color: rgb(1, 1, 1), // White
+                    });
+                    */
+
+                    // Based on typical NotebookLM export...
+                    // Actually, let's cover the footer area too just in case.
+
+                    // Let's implement a 'Cover all corners' strategy for now, or maybe just ask user? 
+                    // Making it simple: Cover Top Right and Bottom Center.
+
+                    // Top Right Logo
+                    page.drawRectangle({
+                        x: width - 200,
+                        y: height - 60,
+                        width: 190,
+                        height: 50,
+                        color: rgb(1, 1, 1),
+                    });
+
+                    // Bottom Center Branding
+                    page.drawRectangle({
+                        x: 0,
+                        y: 0,
+                        width: width,
+                        height: 40,
+                        color: rgb(1, 1, 1),
+                    });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "clean_" + currentFile.name;
+                link.click();
+
+                status.textContent = "完了しました。";
+
+            } catch (err) {
+                console.error(err);
+                status.textContent = "エラーが発生しました: " + err.message;
+            }
+        };
+    </script>
+</body>
+
+</html>

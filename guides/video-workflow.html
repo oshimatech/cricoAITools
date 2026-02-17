@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI動画生成ワークフローガイド</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+
+        .prose h2 {
+            color: #60a5fa;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .prose h3 {
+            color: #94a3b8;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .prose li {
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-4xl mx-auto">
+    <a href="index.html" class="text-blue-400 hover:underline mb-8 block">&larr; ガイド一覧に戻る</a>
+
+    <article class="prose prose-invert max-w-none">
+        <h1 class="text-4xl font-bold text-white mb-4">動画生成AIコンテンツ制作ワークフロー</h1>
+        <p class="text-gray-400 text-lg mb-8">Kling AI, Vidu, Midjourney, ElevenLabsを組み合わせた、現状最も品質が高くなる制作フローの解説です。</p>
+
+        <div class="step">
+            <h2 class="!mt-0">1. 画像素材の生成 (Midjourney)</h2>
+            <p>動画生成AIは「Text to Video」よりも「Image to Video」の方が圧倒的に制御しやすく、高品質です。まずはMidjourneyで完璧なキービジュアルを作成します。</p>
+            <ul>
+                <li><strong>アスペクト比:</strong> <code>--ar 16:9</code> を必ず指定（動画用）。</li>
+                <li><strong>構図:</strong> 動かしたときに破綻しないよう、被写体が明確な構図を選ぶ。</li>
+                <li><strong>一貫性:</strong> キャラクターリファレンス (<code>--cref</code>) を使い、同じキャラの別カットを量産しておく。</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h2>2. 動画化 (Kling AI / Vidu)</h2>
+            <p>生成した画像を元に、動画生成AIで動きをつけます。用途によって使い分けます。</p>
+            <h3>Kling AI (高画質・リアル寄り)</h3>
+            <ul>
+                <li>プロンプトには「動き」のみを記述する（例: "The girl turns her head and smiles", "Camera slow zoom in"）。</li>
+                <li><strong>Duration:</strong> 基本は5秒で生成し、良ければ10秒に延長。</li>
+                <li><strong>Motion Brush:</strong> 動かしたい部分だけを指定できる機能があれば活用する。</li>
+            </ul>
+            <h3>Vidu (高速・アニメーション寄り)</h3>
+            <ul>
+                <li>動きが大きく、アニメ調の表現に強い傾向があります。</li>
+                <li>生成スピードが速いため、試行回数を増やしたい場合に最適。</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h2>3. 音声・ナレーション生成 (ElevenLabs)</h2>
+            <p>映像に合わせて、ナレーションやセリフを生成します。</p>
+            <ul>
+                <li><strong>Speech to Speech:</strong> 自分の声を元にイントネーションを調整すると、より自然な演技が可能。</li>
+                <li><strong>Sound Effects:</strong> ElevenLabsの新機能（SE生成）で、環境音（足音、風の音など）も作成。</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h2>4. 編集・統合</h2>
+            <p>最後に動画編集ソフト（Premiere Pro, CapCutなど）で統合します。</p>
+            <ul>
+                <li><strong>アップスケール:</strong> 必要に応じてTopaz Video AIなどで4K化。</li>
+                <li><strong>リップシンク:</strong> キャラクターが喋る場合、SyncLabsなどで口パクを合わせる（オプション）。</li>
+            </ul>
+        </div>
+    </article>
+</body>
+
+</html>

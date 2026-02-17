@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Watermark Cleaner - 透かし消し</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        #canvas-wrapper {
+            position: relative;
+            max-width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-8 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="text-center mb-10 mt-8">
+        <h1 class="text-3xl font-bold text-white mb-2">Gemini Watermark Cleaner <span class="text-blue-400">✨</span>
+        </h1>
+        <p class="text-gray-400 text-sm">Gemini等の生成画像右下にある透かし（ウォーターマーク）を簡易的に除去・補正します。</p>
+    </header>
+
+    <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- Controls -->
+        <div class="space-y-6">
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                <h2 class="text-xl font-bold text-white mb-4">1. アップロード</h2>
+                <input type="file" id="file-input" accept="image/*"
+                    class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                <h2 class="text-xl font-bold text-white mb-4">2. 調整</h2>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-1">マスクサイズ</label>
+                    <input type="range" id="size-slider" min="30" max="150" value="60" class="w-full">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-1">ぼかし強度 (Blur)</label>
+                    <input type="range" id="blur-slider" min="0" max="20" value="5" class="w-full">
+                </div>
+                <p class="text-xs text-gray-500">※右下の領域を周囲の色で馴染ませて塗りつぶします。</p>
+            </div>
+
+            <button id="download-btn" disabled
+                class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow transition disabled:opacity-50">
+                画像を保存
+            </button>
+        </div>
+
+        <!-- Preview -->
+        <div
+            class="flex flex-col items-center justify-center bg-gray-900 p-4 rounded-2xl border border-gray-800 min-h-[300px]">
+            <canvas id="preview-canvas" class="hidden max-w-full max-h-[500px]"></canvas>
+            <p id="placeholder-text" class="text-gray-600">画像を選択してください</p>
+        </div>
+
+    </main>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const canvas = document.getElementById('preview-canvas');
+        const ctx = canvas.getContext('2d');
+        const placeholder = document.getElementById('placeholder-text');
+        const downloadBtn = document.getElementById('download-btn');
+        const sizeSlider = document.getElementById('size-slider');
+        const blurSlider = document.getElementById('blur-slider');
+
+        let originalImage = null;
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                originalImage = img;
+                canvas.width = img.width;
+                canvas.height = img.height;
+                placeholder.classList.add('hidden');
+                canvas.classList.remove('hidden');
+                downloadBtn.disabled = false;
+                processImage();
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        [sizeSlider, blurSlider].forEach(el => el.oninput = processImage);
+
+        function processImage() {
+            if (!originalImage) return;
+
+            // Draw original
+            ctx.drawImage(originalImage, 0, 0);
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const size = parseInt(sizeSlider.value); // Mask size form bottom right
+            const blur = parseInt(blurSlider.value);
+
+            // Coords for bottom right
+            // We assume watermark is about 10-20px from edge
+            const x = w - size - 10;
+            const y = h - size - 10;
+            const rw = size;
+            const rh = size;
+
+            // Simple Inpainting logic:
+            // Pick a color from surrounding pixels (Top-Left of the watermark box)
+            // And paint over. For Gemini wireframe looking watermark, a simple blur or fill average often works better.
+
+            // 1. Get sample area (just above and left of the watermark area)
+            const sampleX = Math.max(0, x - 5);
+            const sampleY = Math.max(0, y - 5);
+            const sampleData = ctx.getImageData(sampleX, sampleY, 5, 5);
+
+            // Calculate average color
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let i = 0; i < sampleData.data.length; i += 4) {
+                r += sampleData.data[i];
+                g += sampleData.data[i + 1];
+                b += sampleData.data[i + 2];
+                count++;
+            }
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
+
+            // 2. Fill the area
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+            // Apply blur filter before drawing rect to make edges soft
+            ctx.filter = `blur(${blur}px)`;
+            ctx.fillRect(x, y, rw + 20, rh + 20); // Overshoot slightly to cover edge
+            ctx.filter = 'none'; // Reset
+        }
+
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.download = `cleaned_${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+    </script>
+</body>
+
+</html>
