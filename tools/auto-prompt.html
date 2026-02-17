@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meta-Prompt Generator - 指示書作成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="w-full max-w-5xl flex justify-between items-center mb-8 mt-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">AI 自動プロンプト生成機 <span class="text-purple-400">🤖</span></h1>
+            <p class="text-gray-400 text-sm">AIに「プロンプトを作らせる」ための指示書を生成します</p>
+        </div>
+        <button id="copy-btn"
+            class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center gap-2">
+            <span>📋 指示書をコピー</span>
+        </button>
+    </header>
+
+    <main class="w-full max-w-5xl space-y-8">
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex gap-4 items-center">
+            <div class="flex flex-col gap-1 flex-1">
+                <label class="text-sm font-bold text-gray-400">ターゲットAI</label>
+                <select id="target-ai" class="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2">
+                    <option value="chatgpt">ChatGPT (GPT-4/4o)</option>
+                    <option value="claude">Claude 3.5 Sonnet</option>
+                    <option value="gemini">Gemini Pro</option>
+                    <option value="midjourney">Midjourney Helper</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-1 flex-1">
+                <label class="text-sm font-bold text-gray-400">目的 (ゴール)</label>
+                <select id="goal-select" class="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2">
+                    <option value="anime_video">アニメ動画生成用のプロンプトを作成させる</option>
+                    <option value="realism_video">実写動画生成用のプロンプトを作成させる</option>
+                    <option value="split_image">9分割画像生成用のプロンプトを作成させる</option>
+                    <option value="general_image">一般的な画像生成プロンプトを作成させる</option>
+                </select>
+            </div>
+            <button id="generate-btn"
+                class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded h-[42px] mt-6">
+                生成
+            </button>
+        </div>
+
+        <div class="flex flex-col h-[600px]">
+            <label class="text-white font-bold mb-2 flex justify-between">
+                生成された指示書 (System Prompt)
+                <span class="text-xs font-normal text-gray-400 bg-gray-700 px-2 py-1 rounded">これをAIに貼り付けてください</span>
+            </label>
+            <textarea id="output-area" readonly
+                class="flex-1 w-full bg-black border border-gray-700 rounded-lg p-6 text-purple-300 font-mono text-sm focus:outline-none resize-none leading-relaxed"></textarea>
+        </div>
+
+    </main>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const outputArea = document.getElementById('output-area');
+        const targetAiSelect = document.getElementById('target-ai');
+        const goalSelect = document.getElementById('goal-select');
+        const copyBtn = document.getElementById('copy-btn');
+
+        const prompts = {
+            anime_video: `あなたはプロフェッショナルな動画生成AIプロンプトエンジニアです。
+ユーザーから「シーンの概要」や「アイデア」が提供されます。
+あなたはそれを元に、動画生成AIで最高品質のアニメーションを生成するための英語プロンプトを作成してください。
+
+# 必須パラメータ
+- アスペクト比: 16:9
+- 解像度: 高解像度
+- スタイル: 日本のハイクオリティなセル画アニメ (Total budget 5 billion yen quality)
+- カメラワーク: ダイナミックな動きを入れること
+
+# 出力フォーマット
+必ず以下の形式でコードブロックに出力してください。
+
+\`\`\`
+[Main Subject & Action], [Details & Atmosphere], [Camera Work], anime style, cel shaded, vibrant colors, 4k, --ar 16:9
+\`\`\`
+
+ユーザー入力待ちです...`,
+
+            realism_video: `あなたは映画監督兼プロンプトエンジニアです。
+ユーザーのアイデアを元に、Runway Gen-2やSoraなどの動画生成AIで使用する「実写映画品質」のプロンプトを作成してください。
+
+# 制約事項
+- まるでハリウッド映画のようなルックを目指す
+- 8k解像度、フォトリアル
+- 具体的なカメラレンズ（例: 35mm, 85mm）やフィルムストックの指定を含める
+- ライティング（例: Cinematic lighting, volumetric fog, rim light）を詳細に記述する
+
+ユーザー入力待ちです...`,
+
+            split_image: `あなたは画像生成AI（Midjourney/Niji）の専門家です。
+ユーザーが指定するテーマの画像を「9枚のグリッド」として生成するためのプロンプトを作成してください。
+後で分割して動画素材として使用するため、それぞれのコマが独立しつつ、統一感のあるスタイルにしてください。
+
+# 必須キーワード
+- split into 9 panels
+- 3x3 grid
+- consistent character
+- 16:9 aspect ratio (for each panel if possible, otherwise --ar 16:9 for whole)
+
+ユーザー入力待ちです...`,
+
+            general_image: `あなたは画像生成のスペシャリストです。
+ユーザーの曖昧な指示を、安定的で高品質な画像生成プロンプトに変換してください。
+構図、照明、スタイル、色彩設計などを補完し、プロフェッショナルな記述に直してください。
+出力は英語で行ってください。`
+        };
+
+        function generate() {
+            const goal = goalSelect.value;
+            const target = targetAiSelect.value;
+
+            let text = prompts[goal] || "Prompt definition not found.";
+
+            // ターゲットAIによる微調整（簡易的）
+            if (target === 'claud') {
+                text = "あなたはClaudeです。\n" + text;
+            } else if (target === 'midjourney') {
+                text += "\n\n(Note: Midjourney向けのパラメータ --v 6.0 なども考慮してください)";
+            }
+
+            outputArea.value = text;
+        }
+
+        generateBtn.addEventListener('click', generate);
+
+        copyBtn.addEventListener('click', () => {
+            outputArea.select();
+            document.execCommand('copy');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<span class="text-white">✅ コピー完了!</span>';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+        });
+
+        // 初期表示
+        generate();
+    </script>
+</body>
+
+</html>

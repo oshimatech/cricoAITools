@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Grid Maker - 画像結合ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <!-- ... (User Code) ... -->
+    <style>
+        /* ドロップゾーンのスタイル */
+        #drop-zone {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+
+        #drop-zone.dragover {
+            border-color: #63b3ed;
+            background-color: rgba(66, 153, 225, 0.1);
+        }
+
+        /* キャンバスのレスポンシブ表示 */
+        #canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16 / 9;
+            margin: 0 auto;
+            background-image: linear-gradient(45deg, #2d3748 25%, transparent 25%),
+                linear-gradient(-45deg, #2d3748 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #2d3748 75%),
+                linear-gradient(-45deg, transparent 75%, #2d3748 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+
+    <header class="w-full max-w-5xl flex justify-between items-center mb-6 mt-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">AI グリッド結合 <span class="text-blue-400">16:9</span></h1>
+            <p class="text-gray-400 text-sm">画像を2〜9枚選んで、AI動画用の分割カットを作成</p>
+        </div>
+        <button id="download-btn"
+            class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+            画像を保存 (PNG)
+        </button>
+    </header>
+
+    <main class="w-full max-w-5xl space-y-6">
+
+        <!-- コントロールパネル -->
+        <div class="bg-gray-800 p-4 rounded-lg flex flex-wrap gap-4 items-center justify-between shadow-lg">
+            <div class="flex items-center gap-4">
+                <label class="btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded cursor-pointer transition">
+                    <span>📁 画像を選択</span>
+                    <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                </label>
+                <span id="file-count" class="text-gray-400 text-sm">選択中: 0枚</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <label class="text-sm text-gray-300">レイアウト:</label>
+                <select id="layout-mode"
+                    class="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="auto">自動 (枚数に合わせる)</option>
+                    <option value="grid2x1">2分割 (左右)</option>
+                    <option value="grid2x2">4分割 (2x2)</option>
+                    <option value="grid3x2">6分割 (3x2)</option>
+                    <option value="grid3x3">9分割 (3x3)</option>
+                    <option value="grid4x1">4分割 (縦短冊)</option>
+                </select>
+                <button id="clear-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-2">リセット</button>
+            </div>
+        </div>
+
+        <!-- キャンバスプレビューエリア -->
+        <div id="canvas-container" class="rounded-lg overflow-hidden border border-gray-700">
+            <canvas id="main-canvas"></canvas>
+        </div>
+
+        <!-- ドロップゾーン -->
+        <div id="drop-zone"
+            class="w-full py-12 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer">
+            <svg class="w-12 h-12 mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                </path>
+            </svg>
+            <p>ここに画像をドラッグ＆ドロップ、または上のボタンから選択</p>
+        </div>
+
+    </main>
+
+    <script>
+        // 設定
+        const TARGET_WIDTH = 1920;
+        const TARGET_HEIGHT = 1080;
+
+        // 要素の取得
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const downloadBtn = document.getElementById('download-btn');
+        const layoutSelect = document.getElementById('layout-mode');
+        const clearBtn = document.getElementById('clear-btn');
+        const fileCountSpan = document.getElementById('file-count');
+
+        // 状態管理
+        let loadedImages = []; // Imageオブジェクトの配列
+
+        // キャンバスの初期化
+        canvas.width = TARGET_WIDTH;
+        canvas.height = TARGET_HEIGHT;
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 初期メッセージ描画
+        function drawPlaceholder() {
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 60px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("PREVIEW AREA (1920x1080)", canvas.width / 2, canvas.height / 2);
+        }
+        drawPlaceholder();
+
+        // ファイル読み込み処理
+        function handleFiles(files) {
+            if (!files.length) return;
+
+            // 配列に変換して追加読み込み（既存リストをリセットしたい場合はここで loadedImages = []）
+            // 今回は追加ではなく「置き換え」挙動にする（わかりやすさのため）
+            loadedImages = [];
+
+            const promises = Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = URL.createObjectURL(file);
+                });
+            });
+
+            Promise.all(promises).then(images => {
+                loadedImages = images;
+                fileCountSpan.textContent = `選択中: ${loadedImages.length}枚`;
+                renderGrid();
+            }).catch(err => {
+                console.error("画像の読み込みに失敗しました", err);
+                alert("画像の読み込みに失敗しました。");
+            });
+        }
+
+        // グリッド描画のメインロジック
+        function renderGrid() {
+            if (loadedImages.length === 0) {
+                drawPlaceholder();
+                return;
+            }
+
+            // キャンバスリセット
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const count = loadedImages.length;
+            const mode = layoutSelect.value;
+
+            let cols = 1;
+            let rows = 1;
+
+            // レイアウト決定ロジック
+            if (mode === 'auto') {
+                if (count === 1) { cols = 1; rows = 1; }
+                else if (count === 2) { cols = 2; rows = 1; }
+                else if (count <= 4) { cols = 2; rows = 2; }
+                else if (count <= 6) { cols = 3; rows = 2; }
+                else { cols = 3; rows = 3; } // 9枚まで
+            } else {
+                // 固定モード
+                switch (mode) {
+                    case 'grid2x1': cols = 2; rows = 1; break;
+                    case 'grid2x2': cols = 2; rows = 2; break;
+                    case 'grid3x2': cols = 3; rows = 2; break;
+                    case 'grid3x3': cols = 3; rows = 3; break;
+                    case 'grid4x1': cols = 4; rows = 1; break;
+                }
+            }
+
+            const cellWidth = canvas.width / cols;
+            const cellHeight = canvas.height / rows;
+
+            loadedImages.forEach((img, index) => {
+                // 最大描画数を超えたら無視
+                if (index >= cols * rows) return;
+
+                const colIndex = index % cols;
+                const rowIndex = Math.floor(index / cols);
+
+                const x = colIndex * cellWidth;
+                const y = rowIndex * cellHeight;
+
+                // Center Crop (Object-fit: cover) の計算
+                const imgAspect = img.width / img.height;
+                const cellAspect = cellWidth / cellHeight;
+
+                let drawWidth, drawHeight, offsetX, offsetY;
+
+                if (imgAspect > cellAspect) {
+                    // 画像の方が横長 -> 高さを合わせる、左右をカット
+                    drawHeight = cellHeight;
+                    drawWidth = cellHeight * imgAspect;
+                    offsetY = 0;
+                    offsetX = (cellWidth - drawWidth) / 2; // 中心合わせ
+                } else {
+                    // 画像の方が縦長 -> 幅を合わせる、上下をカット
+                    drawWidth = cellWidth;
+                    drawHeight = cellWidth / imgAspect;
+                    offsetX = 0;
+                    offsetY = (cellHeight - drawHeight) / 2; // 中心合わせ
+                }
+
+                // クリップ領域を設定して描画（はみ出し防止）
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, cellWidth, cellHeight);
+                ctx.clip();
+
+                // 画像描画
+                ctx.drawImage(img, x + offsetX, y + offsetY, drawWidth, drawHeight);
+
+                ctx.restore();
+            });
+        }
+
+        // イベントリスナー
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        layoutSelect.addEventListener('change', renderGrid);
+
+        clearBtn.addEventListener('click', () => {
+            loadedImages = [];
+            fileInput.value = '';
+            fileCountSpan.textContent = "選択中: 0枚";
+            drawPlaceholder();
+        });
+
+        // ダウンロード処理
+        downloadBtn.addEventListener('click', () => {
+            if (loadedImages.length === 0) {
+                alert("画像を選択してください");
+                return;
+            }
+
+            // 現在の日時を取得してファイル名にする
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+            const fileName = `grid_${timestamp}.png`;
+
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png', 1.0); // 最高画質
+            link.click();
+        });
+
+        // ドラッグ＆ドロップ処理
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // Drop zone click triggers input
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Assembler - プロンプト組立</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .template-btn {
+            transition: all 0.2s ease;
+        }
+
+        .template-btn.active {
+            background-color: #ed8936;
+            color: white;
+            border-color: #ed8936;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 flex flex-col items-center">
+    <a href="../index.html" class="absolute top-4 left-4 text-gray-400 hover:text-white mb-4 z-10">
+        &larr; ホームに戻る
+    </a>
+
+    <header class="w-full max-w-5xl flex justify-between items-center mb-8 mt-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">プロンプト・アセンブラ <span class="text-orange-400">📝</span></h1>
+            <p class="text-gray-400 text-sm">あなたのアイデアをプロ仕様のプロンプト形式に自動変換</p>
+        </div>
+        <button id="copy-btn"
+            class="bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center gap-2">
+            <span>📋 コピー</span>
+        </button>
+    </header>
+
+    <main class="w-full max-w-5xl space-y-8">
+
+        <!-- テンプレート選択エリア -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">テンプレート選択 (全24種)</h2>
+            <div id="template-grid"
+                class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-40 overflow-y-auto pr-2">
+                <!-- JSでボタンを生成 -->
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-[500px]">
+
+            <!-- 入力エリア -->
+            <div class="flex flex-col h-full">
+                <label class="text-white font-bold mb-2 flex justify-between">
+                    あなたのアイデア / シーン詳細
+                    <span class="text-xs font-normal text-gray-400 bg-gray-700 px-2 py-1 rounded">自由記述</span>
+                </label>
+                <textarea id="user-input"
+                    class="flex-1 w-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:border-orange-500 resize-none"
+                    placeholder="例：学校の屋上で、夕日を背に振り返る少女。風が吹いて髪がなびいている。"></textarea>
+            </div>
+
+            <!-- 出力エリア -->
+            <div class="flex flex-col h-full">
+                <label class="text-white font-bold mb-2 flex justify-between">
+                    生成されたプロンプト
+                    <span class="text-xs font-normal text-orange-400 bg-gray-700 px-2 py-1 rounded">AI生成用</span>
+                </label>
+                <div class="relative flex-1">
+                    <textarea id="output-area" readonly
+                        class="w-full h-full bg-black border border-gray-700 rounded-lg p-4 text-green-400 font-mono text-sm focus:outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        const templateGrid = document.getElementById('template-grid');
+        const userInput = document.getElementById('user-input');
+        const outputArea = document.getElementById('output-area');
+        const copyBtn = document.getElementById('copy-btn');
+
+        // テンプレート定義
+        const templates = [
+            {
+                id: 1,
+                name: "分割画像作成",
+                desc: "16:9 9分割画像用",
+                prefix: "",
+                suffix: "\n\n日本のフルカラーアニメのシーンを9つ作る。プロ仕様の様々なアングル構図、全て16:9のアスペクト比で作成。"
+            },
+            {
+                id: 2,
+                name: "アニメ動画 (50億円)",
+                desc: "高品質セル画アニメ設定",
+                wrapper: (text) => `総製作費50億円クラスの日本のフルカラーセル画アニメ。10秒。24fps。作画枚数が多く、テンポの良い高速カット割り。
+
+登場人物は2人のみ。キャラ入れ替わり禁止。別キャラ追加禁止。
+
+舞台・構成・詳細：
+${text}
+
+セリフは必ずこの順番で固定、変更禁止。セリフの入れ替わり禁止。
+
+カメラ：ダイナミック、パン、ズーム。手持ち風の揺れは最小。被写界深度あり。`
+            },
+            {
+                id: 3,
+                name: "実写シネマティック",
+                desc: "8k 映画品質",
+                prefix: "8k resolution, photorealistic, cinematic lighting, movie scene from a hollywood blockbuster, ",
+                suffix: ", shot on ARRI Alexa, highly detailed, dramatic atmosphere."
+            },
+            // 4〜24はプレースホルダー
+        ];
+
+        // 24個まで埋める
+        for (let i = 4; i <= 24; i++) {
+            templates.push({
+                id: i,
+                name: `パターン ${i}`,
+                desc: "カスタム設定",
+                prefix: `[パターン ${i} 開始] `,
+                suffix: ` [パターン ${i} 終了]`
+            });
+        }
+
+        let currentTemplateId = 1;
+
+        // 初期化
+        function init() {
+            // ボタン生成
+            templates.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = `template-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs py-2 px-1 rounded border border-gray-600 truncate ${t.id === 1 ? 'active' : ''}`;
+                btn.textContent = t.name;
+                btn.title = t.desc;
+                btn.onclick = () => selectTemplate(t.id);
+                templateGrid.appendChild(btn);
+            });
+
+            updateOutput();
+        }
+
+        function selectTemplate(id) {
+            currentTemplateId = id;
+            // UI更新
+            document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
+            // ボタンのインデックスは id-1 と仮定（配列順序通りなら）
+            templateGrid.children[id - 1].classList.add('active');
+            updateOutput();
+        }
+
+        function updateOutput() {
+            const template = templates.find(t => t.id === currentTemplateId);
+            const text = userInput.value;
+
+            if (template.wrapper) {
+                // Wrapperタイプの場合
+                outputArea.value = template.wrapper(text);
+            } else {
+                // Prefix/Suffixタイプの場合
+                outputArea.value = `${template.prefix || ''}${text}${template.suffix || ''}`;
+            }
+        }
+
+        // イベント
+        userInput.addEventListener('input', updateOutput);
+
+        copyBtn.addEventListener('click', () => {
+            outputArea.select();
+            document.execCommand('copy');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<span class="text-white">✅ コピー完了!</span>';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
